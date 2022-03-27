@@ -386,6 +386,11 @@ export default{
             this.book.goto(res.currentCfi).then(() => {
               console.log('go his done')
               this.loading = false
+            }).catch(err => {
+              console.log('go his error')
+              console.log(err)
+              this.loading = false
+              message.info('dump to history fail , please try again')
             })
           } else {
             console.log('stay here')
