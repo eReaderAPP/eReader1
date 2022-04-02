@@ -4,6 +4,7 @@ import BookList from '@/views/BookList'
 import Book from '@/views/Book'
 import About from '@/views/About'
 import Help from '@/views/Help'
+import Login from '@/views/Login'
 Vue.use(Router)
 let router = new Router({
   routes: [
@@ -23,11 +24,11 @@ let router = new Router({
             label: 'Menu'
           }, {
             key: 'open',
-            icon: 'upload',
+            icon: 'book',
             label: 'Open'
           }, {
             key: 'cloud',
-            icon: 'cloud',
+            icon: 'sync',
             label: 'Upload'
           }, {
             key: 'option',
@@ -69,11 +70,11 @@ let router = new Router({
             label: 'Menu'
           }, {
             key: 'open',
-            icon: 'upload',
+            icon: 'book',
             label: 'Open'
           }, {
             key: 'cloud',
-            icon: 'cloud',
+            icon: 'sync',
             label: 'Upload'
           }, {
             key: 'option',
@@ -94,11 +95,11 @@ let router = new Router({
             label: 'Menu'
           }, {
             key: 'open',
-            icon: 'upload',
+            icon: 'book',
             label: 'Open'
           }, {
             key: 'cloud',
-            icon: 'cloud',
+            icon: 'sync',
             label: 'Upload'
           }, {
             key: 'option',
@@ -107,6 +108,11 @@ let router = new Router({
           }
         ]
       }
+    }, {
+      path: '/login',
+      name: 'login',
+      component: Login,
+      meta: {}
     }
   ]
 })

@@ -1,7 +1,7 @@
 <template>
   <div id="app" class="class1">
       <!-- header -->
-      <a-layout-header class="header">
+      <a-layout-header class="header" v-show="$route.path!=='/login'">
         <a-row justify="end" type="flex" class="header-btn-are">
                 <!-- <a-icon type="select" class="openSide" @click="sideController"/> -->
                 <!-- <a-icon type="home" class="openSide" @click="goHome" v-if="!($route.path==='/bookList')"></a-icon> -->
@@ -30,6 +30,7 @@
             @breakpoint="onBreakpoint"
             :width="menuWidth"
             height="100%"
+            v-show="$route.path!=='/login'"
           >
             <a-menu theme="dark" mode="inline" :default-selected-keys="menuKey" @click="menuClick">
               <a-menu-item key="1">
@@ -69,6 +70,38 @@
       </a-card> -->
     </a-drawer>
 
+    <a-drawer
+      title="Upload to the cloud"
+      placement="top"
+      :closable="false"
+      :visible="cloudVisible"
+      @close="cloudClose"
+    >
+      <!-- <div>
+        <p><a-icon type="info-circle" /> Upload: <br> <span class="info-text">
+          the upload button will not upload your local book files to the server, but only upload your reading history, reading habits and your device information, so that it can be synchronized when you switch devices or clear your browsing history
+        </span></p>
+        <a-button @click="upload" block type="primary">
+          Upload reading history now
+        </a-button>
+      </div>
+      <div style="margin-top: 50px;">
+        <a-button @click="getCloud" block type="primary">
+          Get cloud data now
+        </a-button>
+      </div> -->
+      <a-row type="flex" style="height: 150px" justify="space-around" >
+        <a-col style="width: 150px; text-align: center;" @click="upload">
+          <a-icon type="cloud-upload" class="big-font"/>
+          <div>Upload</div>
+        </a-col>
+        <a-col style="width: 150px; text-align: center;" @click="getCloud">
+          <a-icon type="cloud-sync" class="big-font"/>
+          <div>Sync</div>
+        </a-col >
+      </a-row>
+    </a-drawer>
+
     <div class="loading" v-show="loading">
       <div>
         <a-spin size="large"/>
@@ -78,9 +111,14 @@
 </template>
 
 <script>
+
 // import {hackTrans} from '@/utils/googleTranslate.js'
 
 import { message, notification } from 'ant-design-vue'
+import DB from '@/indexDB/DB.js'
+import booksDb from '@/indexDB/books-db.js'
+import bookPageDb from '@/indexDB/bookPage-db.js'
+
 export default {
   name: 'App',
   data () {
@@ -108,10 +146,102 @@ export default {
       menuWidth: '150',
       isMobileStatus: true,
       isHome: false,
-      googleStatus: 0 // 0 :pendding,1:resolve,2:reject
+      googleStatus: 0, // 0 :pendding,1:resolve,2:reject
+      cloudVisible: false
     }
   },
   methods: {
+    getCloud () {
+      this.cloudVisible = false
+      this.showLoad()
+      let datas = this.$fs.get('userBooks')
+      datas.then(res => {
+        this.closeLoad()
+        window.test = res
+        let data = res.docs
+        try {
+          let metadata = data[0]._document.data.value.mapValue.fields
+          let content = {}
+          for (let index in metadata) {
+            content[index] = JSON.parse(metadata[index]['stringValue'])
+          }
+          console.log(content)
+          if (content.bookPages) {
+            let database = new DB(bookPageDb)
+            database.openDB().then(() => {
+              content.bookPages.forEach(ele => {
+                database.featch(ele.bookName).then(res => {
+                  if (res) {
+                    // 是否替换现有历史记录
+                    this.$confirm({
+                      title: 'Confirm whether to replace the reading record?',
+                      content: 'The local reading record is inconsistent with the online saving record, please confirm whether to replace the local record with the online reading record',
+                      onOk () {
+                        database.update(ele.bookName, ele).then(() => {
+                          message.info('Successfully')
+                        }).catch(() => {
+                          message.error('Failed, Please try again later')
+                        })
+                      },
+                      onCancel () {
+                        message.info('Request Canceled')
+                      }
+                    })
+                  } else {
+                    // 直接更新历史记录
+                    database.update(ele.bookName, ele).then(() => {
+                      message.info('Successfully')
+                    }).catch(() => {
+                      message.error('Failed, Please try again later')
+                    })
+                  }
+                })
+              })
+            })
+          }
+        } catch (e) {
+          message.error("The online history record of the user's identity is empty.")
+        }
+      })
+    },
+    upload () {
+      this.cloudVisible = false
+      let promiseList = []
+      let db = new DB(booksDb)
+      promiseList.push(db.openDB().then(() => {
+        return db.featchAll()
+      }))
+
+      let db2 = new DB(bookPageDb)
+      promiseList.push(db2.openDB().then(() => {
+        return db2.featchAll()
+      })
+      )
+      Promise.all(promiseList).then(res => {
+        let [books, bookPages] = res
+        let booksStore = []
+        let skipKeys = ['content', 'cover']
+        books.forEach(book => {
+          let temp = {}
+          for (let key in book) {
+            if (skipKeys.indexOf(key) === -1) {
+              temp[key] = book[key]
+            }
+          }
+
+          booksStore.push(temp)
+        })
+        let uid = this.session.get('uid')
+        this.showLoad()
+        this.$fs.set('userBooks', uid, {
+          books: JSON.stringify(booksStore),
+          bookPages: JSON.stringify(bookPages),
+          platform: JSON.stringify(navigator.userAgent)
+        })
+        message.info('update completed')
+        this.closeLoad()
+      })
+    },
     initMenuBar () {
       if (this.$route.query.type) {
         console.log(this.$route.query.type)
@@ -149,6 +279,9 @@ export default {
     },
     onClose () {
       this.visible = false
+    },
+    cloudClose () {
+      this.cloudVisible = false
     },
     initGoogle () {
       let count = 0
@@ -266,6 +399,13 @@ export default {
         case 'option':
           console.log('打开设置')
           this.visible = true
+          break
+        case 'cloud':
+          if (!this.session.get('phoneNumber')) {
+            this.$router.push('/login')
+          } else {
+            this.cloudVisible = true
+          }
           break
         default:
           message.info('to be continued')
@@ -409,5 +549,14 @@ body,html{
   }
   .export-card{
     margin-top: 20px;
+  }
+  .info-text{
+    font-size: 1px;
+    font-weight: 700;
+  }
+  .big-font{
+    font-size: 130px;
+    background: #f0f0f0;
+    border-radius: 10px;
   }
 </style>
