@@ -191,7 +191,7 @@ export default {
       head.appendChild(script)
     },
     sideController (param) {
-      console.log('in', param)
+      // console.log('in', param)
       if (param !== undefined) this.collapsed = param
       else this.collapsed = !this.collapsed
     },
