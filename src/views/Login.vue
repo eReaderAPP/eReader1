@@ -176,8 +176,8 @@ export default{
     margin-bottom: 62px;
   }
   .item{
-    width: 70%;
-    margin: auto;
+    width: 70% !important;
+    margin: auto !important;
   }
   .line{
     margin-top: 25px;
