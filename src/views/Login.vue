@@ -177,7 +177,8 @@ export default{
   }
   .item{
     width: 70% !important;
-    margin: auto !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
   }
   .line{
     margin-top: 25px;
