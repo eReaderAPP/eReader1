@@ -91,11 +91,11 @@
         </a-button>
       </div> -->
       <a-row type="flex" style="height: 150px" justify="space-around" >
-        <a-col style="width: 150px; text-align: center;" @click="upload">
+        <a-col style="width: 130px; text-align: center;" @click="upload" class="item-choose">
           <a-icon type="cloud-upload" class="big-font"/>
           <div>Upload</div>
         </a-col>
-        <a-col style="width: 150px; text-align: center;" @click="getCloud">
+        <a-col style="width: 130px; text-align: center;" @click="getCloud" class="item-choose">
           <a-icon type="cloud-sync" class="big-font"/>
           <div>Sync</div>
         </a-col >
@@ -555,8 +555,13 @@ body,html{
     font-weight: 700;
   }
   .big-font{
-    font-size: 130px;
+    font-size: 60px;
     background: #f0f0f0;
     border-radius: 10px;
+  }
+  .item-choose :hover{
+    opacity: 0.5;
+    zoom: 1.1;
+    transition: all 2s;
   }
 </style>
